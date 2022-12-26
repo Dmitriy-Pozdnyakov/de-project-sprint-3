@@ -6,7 +6,7 @@ import psycopg2
 
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.hooks.http_hook import HttpHook
@@ -57,7 +57,7 @@ def get_report(ti):
             time.sleep(10)
 
     if not report_id:
-        raise TimeoutError()
+        raise TimeoutError('report failed')
 
     ti.xcom_push(key='report_id', value=report_id)
     print(f'Report_id={report_id}')
@@ -92,8 +92,8 @@ def upload_data_to_staging(filename, date, pg_table, pg_schema, ti):
     open(f"{local_filename}", "wb").write(response.content)
     print(response.content)
 
-    df = pd.read_csv(local_filename)
-    df=df.drop('id', axis=1)
+    df = pd.read_csv(local_filename, index_col=0)
+    # df=df.drop('id', axis=1)
     df=df.drop_duplicates(subset=['uniq_id'])
 
     if 'status' not in df.columns:
@@ -124,10 +124,11 @@ args = {
     'email': ['student@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 0
+    'retries': 3
 }
 
 business_dt = '{{ yesterday_ds }}'
+
 
 with DAG(
         'sales_daily_increment',
@@ -172,7 +173,7 @@ with DAG(
         task_id='update_d_city',
         postgres_conn_id=postgres_conn_id,
         sql="sql/mart.d_city.sql")
-
+    
     update_f_sales = PostgresOperator(
         task_id='update_f_sales',
         postgres_conn_id=postgres_conn_id,
@@ -183,7 +184,7 @@ with DAG(
     update_f_customer_retention = PostgresOperator(
         task_id='update_f_customer_retention',
         postgres_conn_id=postgres_conn_id,
-        sql="sql/dml_migration/mart.f_customer_retention.sql",
+        sql="sql/mart.f_customer_retention.sql",
         parameters={"ds_date_dif": '1'}
     )
 
