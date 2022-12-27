@@ -6,7 +6,7 @@
 ### Структура репозитория
 1. В папке `src` хранятся все необходимые исходники: 
 * src\database_de_init: *dump_de_shema.sql* - восстанавливает схему БД, *mart.d_calendar* - наполняет таблицу календарь данными
-* src\dags - содержит DAG's Airflow: *sales_daily_increment.py* - обновляет базу данных инкрементом за вчера, *sales_period_increment.py* - обновляет бд инкрементами за определенный период
+* src\dags - содержит DAG's Airflow: *sales_daily_increment.py* - обновляет базу данных инкрементом за вчера
 
 2. Папка `migrations` хранит файлы миграции:
 * mart.f_customer_retention.sql - предназначен для создания ddl - макета новой аналитической витрины

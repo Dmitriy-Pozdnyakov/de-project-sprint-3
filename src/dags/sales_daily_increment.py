@@ -158,22 +158,15 @@ with DAG(
                    'filename': 'user_order_log_inc.csv',
                    'pg_table': 'user_order_log',
                    'pg_schema': 'staging'})
-
-    update_d_item_table = PostgresOperator(
-        task_id='update_d_item',
-        postgres_conn_id=postgres_conn_id,
-        sql="sql/mart.d_item.sql")
-
-    update_d_customer_table = PostgresOperator(
-        task_id='update_d_customer',
-        postgres_conn_id=postgres_conn_id,
-        sql="sql/mart.d_customer.sql")
-
-    update_d_city_table = PostgresOperator(
-        task_id='update_d_city',
-        postgres_conn_id=postgres_conn_id,
-        sql="sql/mart.d_city.sql")
     
+    dimension_tasks = list()    
+    for i in ['d_city', 'd_item', 'd_customer']:
+        dimension_tasks.append(PostgresOperator(
+            task_id = f'load_{i}',
+            postgres_conn_id = 'postgresql_de',
+            sql = f'sql/mart.{i}.sql'
+            )
+        ) 
     update_f_sales = PostgresOperator(
         task_id='update_f_sales',
         postgres_conn_id=postgres_conn_id,
@@ -193,7 +186,7 @@ with DAG(
             >> get_report
             >> get_increment
             >> upload_user_order_inc
-            >> [update_d_item_table, update_d_city_table, update_d_customer_table]
+            >> dimension_tasks
             >> update_f_sales
             >> update_f_customer_retention
     )
